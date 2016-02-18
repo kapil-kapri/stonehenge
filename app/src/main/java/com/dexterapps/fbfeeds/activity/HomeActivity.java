@@ -13,19 +13,29 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.dexterapps.fbfeeds.R;
 import com.dexterapps.fbfeeds.application.MyApplication;
 import com.dexterapps.fbfeeds.fragment.HomeFragment;
 import com.dexterapps.fbfeeds.fragment.LoginFragment;
+import com.dexterapps.fbfeeds.interfaces.ListenerInterfaces;
 import com.dexterapps.fbfeeds.sharedpreferences.SessionManager;
 import com.dexterapps.fbfeeds.utility.Constants;
 import com.dexterapps.fbfeeds.utility.MyUtility;
+import com.facebook.AccessToken;
+import com.facebook.AccessTokenTracker;
+import com.facebook.Profile;
+import com.facebook.ProfileTracker;
+import com.facebook.login.LoginManager;
 
 public class HomeActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, ListenerInterfaces.MyFbCallbacks {
     public static final String TAG = "HomeActivity";
     private Fragment fragment;
+    public static ListenerInterfaces.MyFbCallbacks myFbCallbacks;
+    private AccessTokenTracker accessTokenTracker;
+    private ProfileTracker profileTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,25 +62,35 @@ public class HomeActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        Bundle bundle = new Bundle();
+        myFbCallbacks = this;
+
 
         // Session Manager Class
         SessionManager session = MyApplication.getSessionManager();
 
-        if (!session.isLoggedIn()) {
-            // login screen
-            fragment = LoginFragment.newInstance(bundle);
+        if (null != AccessToken.getCurrentAccessToken() && !AccessToken.getCurrentAccessToken().isExpired()) {
+            // Home Screen
+            openHomePage();
         } else {
-            // check in screen
-            fragment = HomeFragment.newInstance();
-
-
+            // Login Screen
+            openLoginPage();
         }
-
-
-        MyUtility.addFragmentToActivity(HomeActivity.this,
-                fragment, Constants.fragmentContainer, fragment.getClass().getSimpleName());
-
+        accessTokenTracker = new AccessTokenTracker() {
+            @Override
+            protected void onCurrentAccessTokenChanged(AccessToken oldAccessToken, AccessToken currentAccessToken) {
+                if(currentAccessToken==null){
+                   myFbCallbacks.onLogoutSuccess();
+                }
+            }
+        };
+        profileTracker = new ProfileTracker() {
+            @Override
+            protected void onCurrentProfileChanged(Profile oldProfile, Profile newProfile) {
+                 displayMessage(newProfile);
+            }
+        };
+        accessTokenTracker.startTracking();
+        profileTracker.startTracking();
 
     }
 
@@ -122,12 +142,59 @@ public class HomeActivity extends AppCompatActivity
 
         } else if (id == R.id.nav_share) {
 
-        } else if (id == R.id.nav_send) {
-
+        } else if (id == R.id.nav_logout) {
+            LoginManager.getInstance().logOut();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onLoginSuccess() {
+        openHomePage();
+        accessTokenTracker.startTracking();
+        profileTracker.startTracking();
+
+    }
+
+    @Override
+    public void onLoginError() {
+
+    }
+
+    @Override
+    public void onLogoutSuccess() {
+        openLoginPage();
+        accessTokenTracker.startTracking();
+        profileTracker.startTracking();
+
+    }
+
+    @Override
+    public void onLogoutError() {
+
+    }
+
+    private void openLoginPage() {
+        // Login screen
+        Bundle bundle = new Bundle();
+        fragment = LoginFragment.newInstance(bundle);
+        MyUtility.replaceFragmentToActivity(HomeActivity.this,
+                fragment, Constants.fragmentContainer, false);
+    }
+
+    private void openHomePage() {
+        // Login screen
+        // Bundle bundle = new Bundle();
+        fragment = HomeFragment.newInstance();
+        MyUtility.replaceFragmentToActivity(HomeActivity.this,
+                fragment, Constants.fragmentContainer, false);
+    }
+    private void displayMessage(Profile profile) {
+        if (profile != null) {
+            Toast.makeText(this, profile.getName(), Toast.LENGTH_SHORT).show();
+        }
     }
 }

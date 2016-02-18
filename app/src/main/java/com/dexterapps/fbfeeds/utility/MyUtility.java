@@ -23,4 +23,33 @@ public class MyUtility {
             fragmentTransaction.commit();
         }
     }
+
+
+    public static void addFragmentToActivity
+            (AppCompatActivity activity, Fragment fragment, String tag) {
+        addFragmentToActivity(activity, fragment, Constants.fragmentContainer, tag);
+    }
+
+
+    public static void replaceFragmentToActivity
+            (AppCompatActivity activity, Fragment fragment, int containerId, boolean addToBackStack) {
+        String backStateName = fragment.getClass().getName();
+        FragmentManager fragmentManager = activity.getSupportFragmentManager();
+        boolean fragmentPopped = fragmentManager.popBackStackImmediate(backStateName, 0);
+
+        if (!fragmentPopped && fragmentManager.findFragmentByTag(backStateName) == null) { //fragment not in back stack, create it.
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.replace(containerId, fragment, backStateName);
+            if (addToBackStack)
+                fragmentTransaction.addToBackStack(backStateName);
+            fragmentTransaction.commit();
+        }
+    }
+
+    public static void replaceFragmentToActivity
+            (AppCompatActivity activity, Fragment fragment, boolean addToBackStack) {
+        replaceFragmentToActivity(activity, fragment, Constants.fragmentContainer, addToBackStack);
+    }
+
+
 }

@@ -10,10 +10,12 @@ import android.util.Log;
 
 import com.dexterapps.fbfeeds.BuildConfig;
 import com.dexterapps.fbfeeds.R;
+import com.dexterapps.fbfeeds.helper.MyFacebookManager;
 import com.dexterapps.fbfeeds.rest_client.RestAPIManager;
 import com.dexterapps.fbfeeds.rest_client.RestClient;
 import com.dexterapps.fbfeeds.sharedpreferences.SessionManager;
 import com.dexterapps.fbfeeds.utility.Constants;
+import com.facebook.CallbackManager;
 
 import net.gotev.uploadservice.UploadService;
 
@@ -36,6 +38,8 @@ public class MyApplication extends Application {
     private static RestClient restClient;
     //API MANAGER
     private static RestAPIManager apiManager;
+    private static CallbackManager callbackManager;
+    private static MyFacebookManager myFacebookManager;
 
     @Override
     public void onCreate() {
@@ -64,19 +68,31 @@ public class MyApplication extends Application {
         /*
          *  using for retrofit network call
          */
-       // restClient = new RestClient();
+        // restClient = new RestClient();
 
         //apiManager = new RestAPIManager();
+        myFacebookManager =new MyFacebookManager();
+
     }
 
     public static Context getAppContext() {
         return context;
     }
 
+    public static MyFacebookManager getMyFacebookManager() {
+        if (null != myFacebookManager) {
+            return myFacebookManager;
+        } else {
+            return new MyFacebookManager();
+        }
+    }
 
+    public static void setMyFacebookManager(MyFacebookManager myFacebookManager) {
+        MyApplication.myFacebookManager = myFacebookManager;
+    }
 
     /* Method return SessionManager to use Shared Preferences
-    **/
+        **/
     public static SessionManager getSessionManager() {
         if (null != session) {
             return session;
@@ -112,7 +128,7 @@ public class MyApplication extends Application {
             for (Signature signature : info.signatures) {
                 MessageDigest md = MessageDigest.getInstance("SHA");
                 md.update(signature.toByteArray());
-                Log.d("KeyHash: ", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+                Log.d("KeyHash: ----> ", Base64.encodeToString(md.digest(), Base64.DEFAULT));
             }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
